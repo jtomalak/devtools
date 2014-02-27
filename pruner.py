@@ -33,7 +33,10 @@ class action_prune_whitespace:
     def __call__(self, input_file):
         with open(input_file, 'r') as in_file:
             (file_type, file_encoding) = mimetypes.guess_type(input_file)
-            if file_type.split('/')[0] == 'text':
+            if not file_type:
+                if self.verbose:
+                    print('WARNING: Ignoring file ' + input_file + ' because it\'s type cannot be determined.', file=sys.stderr)
+            elif file_type.split('/')[0] == 'text':
                 if contains_bad_whitespace(in_file):
                     tmp_filepath = os.path.dirname(input_file) + "." + os.path.basename(input_file) + '_tmp'
                     strip_and_write(in_file, tmp_filepath)
@@ -51,7 +54,10 @@ class action_print_if_contains_whitespace:
         with open(input_file, 'r') as in_file:
             (file_type, file_encoding) = mimetypes.guess_type(input_file)
             # definitely avoid non-text files!
-            if file_type.split('/')[0] == 'text':
+            if not file_type:
+                if self.verbose:
+                    print('WARNING: Ignoring file ' + input_file + ' because it\'s type cannot be determined.', file=sys.stderr)
+            elif file_type.split('/')[0] == 'text':
                 if contains_bad_whitespace(in_file):
                     print(input_file)
             elif self.verbose:
@@ -73,7 +79,8 @@ def process(input_file_list, action, verbose = False):
         if os.path.isdir(input_file):
             (dirpath, dirs, files) = os.walk(input_file).next()
             filepaths = [ os.path.join(dirpath, filename) for filename in files ]
-            process(filepaths + dirs, action)
+            dirpaths = [ os.path.join(dirpath, dirname) for dirname in dirs ]
+            process(filepaths + dirpaths, action)
         else:
             action(input_file)
 #end process
