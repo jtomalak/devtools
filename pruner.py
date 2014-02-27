@@ -58,29 +58,30 @@ class action_print_if_contains_whitespace:
                 print('WARNING: Ignoring file ' + input_file + ' because appears to be a non-text type (' + file_type.split('/')[0] + ')', file=sys.stderr)
 #end action_print_if_contains_whitespace
 
-def process(input_file_list, action):
+def process(input_file_list, action, verbose = False):
     for input_file in input_file_list:
         if not os.path.exists(input_file):
-            print('WARNING: File ' + input_file + ' does not exist or is inaccessible, so it was ignored!', file=sys.stderr)
+            if verbose:
+                print('WARNING: File ' + input_file + ' does not exist or is inaccessible, so it was ignored!', file=sys.stderr)
             continue
 
         if os.path.islink(input_file):
-            print('WARNING: Not following link: ' + input_file + '!', file=sys.stderr)
+            if verbose:
+                print('WARNING: Not following link: ' + input_file + '!', file=sys.stderr)
             continue
 
         if os.path.isdir(input_file):
             (dirpath, dirs, files) = os.walk(input_file).next()
-            output = [ os.path.join(dirpath, filename) for filename in files ]
-            process(output, action)
+            filepaths = [ os.path.join(dirpath, filename) for filename in files ]
+            process(filepaths + dirs, action)
         else:
             action(input_file)
-
 #end process
 
 def main():
     parser = argparse.ArgumentParser('Whitespace Remover')
-    parser.add_argument('-D', '--detect', action='store_true')
-    parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('-D', '--detect', action='store_true', help='Print the names of any files containing undesired whitespace')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Print any warnings normally suppressed (such as about ignored files or directories)')
     parser.add_argument('input_files', nargs='+')
 
     args = parser.parse_args()
@@ -90,7 +91,7 @@ def main():
     else:
         action = action_prune_whitespace(args.verbose)
 
-    process(args.input_files, action)
+    process(args.input_files, action, args.verbose)
 
     return 0
 # end main()
